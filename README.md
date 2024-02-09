@@ -32,7 +32,7 @@ ansible-playbook aleo_node.yml
 ```
 Ensure you're running the playbook with root privileges or via a user with sudo access.
 
-Step 5: Managing the Aleo Node
+#  Step 4: Managing the Aleo Node
 Starting Services:
 To start the Aleo client or prover service:
 
@@ -52,7 +52,7 @@ or
 ```
 sudo systemctl stop aleo-prover
 ```
-#  Viewing Logs
+#  Step 5: Viewing Logs
 To view the logs for the Aleo client or prover:
 ```
 journalctl -u aleo-client -f -o cat
