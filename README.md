@@ -9,11 +9,14 @@ Getting Started
 
 # Step 1: Installing Dependencies
 Update your system's package list:
+```
+sudo apt update && sudo apt upgrade -y
+```
 
-sudo apt update
 Install Ansible and Git:
-
+```
 sudo apt install ansible git -y
+```
 
 # Step 2: Downloading the Project
 Clone this repository to get the Ansible playbook and all necessary files:
@@ -32,7 +35,6 @@ Ensure you're running the playbook with root privileges or via a user with sudo 
 Step 5: Managing the Aleo Node
 Starting Services:
 To start the Aleo client or prover service:
-
 
 ```
 sudo systemctl start aleo-client
