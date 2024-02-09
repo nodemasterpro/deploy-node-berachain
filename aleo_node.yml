@@ -61,7 +61,14 @@
       ansible.builtin.shell: sh /tmp/rustup.sh -y
       args:
         creates: "{{ ansible_env.HOME }}/.cargo/bin/rustup"
-      when: node_action == "install"
+      when: node_action == "install" or node_action == "update"
+
+    - name: Update Rust to the latest stable version
+      ansible.builtin.shell: "{{ ansible_env.HOME }}/.cargo/bin/rustup update stable"
+      environment:
+        PATH: "{{ ansible_env.PATH }}:{{ ansible_env.HOME }}/.cargo/bin"
+      when: node_action == "install" or node_action == "update"
+
 
     - name: Clone snarkOS from GitHub repository (fork with fixes)
       ansible.builtin.git:
@@ -78,12 +85,16 @@
           ansible.builtin.command: bash build_ubuntu.sh
           args:
             chdir: "{{ ansible_env.HOME }}/snarkOS"
-        - name: Install snarkOS using cargo
-          ansible.builtin.command: cargo install --path .
+    
+        - name: Install snarkOS using cargo with specific Rust version
+          ansible.builtin.shell: "{{ ansible_env.HOME }}/.cargo/bin/rustup run stable cargo install --path ."
           args:
             chdir: "{{ ansible_env.HOME }}/snarkOS"
+          environment:
+            PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
       when: node_action == "install" or node_action == "update"
       tags: optional
+
 
     - name: Generate an Aleo account and store keys
       block:

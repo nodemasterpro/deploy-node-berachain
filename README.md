@@ -3,7 +3,7 @@
 This repository contains Ansible scripts for installing, updating, and removing an Aleo node on Linux systems. The playbook simplifies the process of setting up an Aleo node, managing its services, and viewing logs for debugging and monitoring.
 
 ## Prerequisites
-A Linux system Ubuntu 22.04 TLS with root or sudo privileges.
+A Linux system Ubuntu 22.04 TLS with root.
 Git and Ansible installed on your machine.
 Getting Started
 
@@ -39,7 +39,7 @@ To start the Aleo client or prover service:
 ```
 sudo systemctl start aleo-client
 ```
-or
+then
 ```
 sudo systemctl start aleo-prover
 ```
@@ -48,18 +48,20 @@ To stop the services:
 ```
 sudo systemctl stop aleo-client
 ```
-or
+then
 ```
 sudo systemctl stop aleo-prover
 ```
 ## Step 5: Viewing Logs
 To view the logs for the Aleo client or prover:
+
+Logs aleo client: 
 ```
 journalctl -u aleo-client -f -o cat
 ```
-or
+Logs aleo prover: 
 ```
 journalctl -u aleo-prover -f -o cat
 ```
 ## Additional Note
-After installation or update, the Aleo account keys are stored in {{ ansible_env.HOME }}/aleo/account_new.txt. Please ensure to check this location for your keys.
+After installation or update, the Aleo account keys are stored in /root/aleo/account_new.txt. Please ensure to check this location for your keys.
