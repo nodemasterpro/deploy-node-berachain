@@ -1,0 +1,13 @@
+[Unit]
+Description=Aleo Client Node
+After=network.target
+
+[Service]
+User=root
+ExecStart=/root/snarkOS/target/release/snarkos start --nodisplay --client
+Restart=always
+RestartSec=10
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

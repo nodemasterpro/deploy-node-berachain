@@ -1,0 +1,13 @@
+[Unit]
+Description=Aleo Prover Node
+After=network.target
+
+[Service]
+User=root
+ExecStart=/root/snarkOS/target/release/snarkos start --nodisplay --prover --private-key {{prover_private_key}}
+Restart=always
+RestartSec=10
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
