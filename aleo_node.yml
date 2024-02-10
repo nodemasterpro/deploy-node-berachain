@@ -5,7 +5,7 @@
   vars_prompt:
     - name: node_action
       prompt: "Enter the action to perform (install, update, remove)"
-      private: no
+      private: false
 
   tasks:
     - name: Check if running as root
@@ -13,7 +13,7 @@
       register: uid
       changed_when: false
       ignore_errors: true
-      check_mode: no
+      check_mode: false
 
     - name: Fail if not running as root
       ansible.builtin.fail:
@@ -72,31 +72,33 @@
 
     - name: Clone snarkOS from GitHub repository (fork with fixes)
       ansible.builtin.git:
+        # repo : 'https://github.com/AleoHQ/snarkOS.git'
         repo: 'https://github.com/BeckerFelix/snarkOS.git'
         dest: "{{ ansible_env.HOME }}/snarkOS"
+        # version: testnet3
         version: fix/hotfix-mismatched-types # Specify the fork's branch
         depth: 1
       when: node_action == "install" or node_action == "update"
 
 
     - name: Install snarkOS
+      when: node_action == "install" or node_action == "update"
       block:
         - name: Run build_ubuntu.sh
           ansible.builtin.command: bash build_ubuntu.sh
           args:
             chdir: "{{ ansible_env.HOME }}/snarkOS"
-    
+
         - name: Install snarkOS using cargo with specific Rust version
           ansible.builtin.shell: "{{ ansible_env.HOME }}/.cargo/bin/rustup run stable cargo install --path ."
           args:
             chdir: "{{ ansible_env.HOME }}/snarkOS"
           environment:
             PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
-      when: node_action == "install" or node_action == "update"
-      tags: optional
 
 
     - name: Generate an Aleo account and store keys
+      when: node_action == "install"
       block:
         - name: Generate Aleo account
           ansible.builtin.command: snarkos account new
@@ -107,8 +109,7 @@
           ansible.builtin.copy:
             content: "{{ account_output.stdout }}"
             dest: "{{ ansible_env.HOME }}/aleo/account_new.txt"
-      when: node_action == "install"
-      notify: Print keys
+            mode: "750"
 
     - name: Extract Prover Private Key
       shell: grep "Private Key" /root/aleo/account_new.txt | awk '{print $3}'
@@ -124,15 +125,14 @@
       ansible.builtin.template:
         src: aleo-client.service.j2
         dest: /etc/systemd/system/aleo-client.service
+        mode: "0770"
       when: node_action == "install"
-      notify: Start Aleo services
 
     - name: Create Aleo prover service
       ansible.builtin.template:
         src: aleo-prover.service.j2
         dest: /etc/systemd/system/aleo-prover.service
       when: node_action == "install"
-      notify: Start Aleo services
 
     - name: Enable and start services
       ansible.builtin.systemd:
@@ -144,12 +144,9 @@
         - aleo-prover
       when: node_action == "install"
 
-    - name: Reload systemd manager configuration
-      ansible.builtin.systemd:
-        daemon_reload: yes
-      when: node_action == "install" 
 
     - name: Remove Aleo
+      when: node_action == "remove"
       block:
         - name: Stop and disable Aleo services
           ansible.builtin.systemd:
@@ -159,7 +156,7 @@
           loop:
             - aleo-client
             - aleo-prover
-          ignore_errors: yes     
+          ignore_errors: true
         - name: Remove Aleo files and configurations
           ansible.builtin.file:
             path: "{{ item }}"
@@ -168,39 +165,22 @@
             - "{{ ansible_env.HOME }}/snarkOS"
             - "/etc/systemd/system/aleo-client.service"
             - "/etc/systemd/system/aleo-prover.service"
-      when: node_action == "remove"
 
-  handlers:
     - name: Print keys
       ansible.builtin.debug:
-        msg: "Aleo account keys are stored in {{ ansible_env.HOME }}/aleo/account_new.txt"
+        msg: "Aleo account keys are stored in {{ ansible_env.HOME }}/aleo/account_new.txt" 
 
-    - name: Start Aleo services
+    - name: Reload systemd manager configuration
+      ansible.builtin.systemd:
+        daemon_reload: true
+      when: node_action == "install" or node_action == "update"
+
+    - name: Restart Aleo services
       ansible.builtin.systemd:
         name: "{{ item }}"
-        state: restarted  # Utilisez "restarted" pour redémarrer le service s'il est déjà lancé, ou le démarrer s'il ne l'est pas.
+        state: restarted
         enabled: true
       loop:
         - aleo-client
         - aleo-prover
-      when: node_action == "install"
-
-    - name: Reload systemd manager configuration to recognize changes
-      ansible.builtin.systemd:
-        daemon_reload: yes
-        when: node_action == "update"    
-
-    - name: Restart Aleo client service after update
-      ansible.builtin.systemd:
-        name: aleo-client
-        state: restarted
-        enabled: yes
-        when: node_action == "update" 
-
-    - name: Restart Aleo prover service after update
-      ansible.builtin.systemd:
-        name: aleo-prover
-        state: restarted
-        enabled: yes
-      when: node_action == "update"
-
+      when: node_action == "install" or node_action == "update"
