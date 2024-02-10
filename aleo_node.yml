@@ -78,6 +78,7 @@
         # version: testnet3
         version: fix/hotfix-mismatched-types # Specify the fork's branch
         depth: 1
+        force: yes
       when: node_action == "install" or node_action == "update"
 
 
