@@ -105,6 +105,8 @@
           ansible.builtin.command: snarkos account new
           args:
             chdir: "{{ ansible_env.HOME }}/snarkOS"
+          environment:
+            PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}" 
           register: account_output
         - name: Save keys to a file
           ansible.builtin.copy:
