@@ -64,4 +64,4 @@ Logs aleo prover:
 journalctl -u aleo-prover -f -o cat
 ```
 ## Additional Note
-After installation or update, the Aleo account keys are stored in /root/aleo/account_new.txt. Please ensure to check this location for your keys.
+After installation or update, the Aleo account keys are stored in /root/aleo/account_new.txt. Please ensure to check this location for your keys. 
