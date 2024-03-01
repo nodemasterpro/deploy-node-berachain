@@ -74,14 +74,6 @@
           ansible.builtin.shell: source /root/.bashrc
           args:
             executable: /bin/bash
-        - name: Verify forge installation
-          ansible.builtin.shell: forge --version
-          args:
-            executable: /bin/bash
-          environment:
-            PATH: "{{ ansible_env.PATH }}:/root/.foundry/bin"   
-          register: forge_version
-          failed_when: forge_version.rc != 0
         - name: Update Foundry to the latest version
           ansible.builtin.shell: foundryup
           args:
@@ -93,6 +85,14 @@
             src: /root/.foundry/bin/forge
             dest: /usr/local/bin/forge
             state: link
+        - name: Verify forge installation
+          ansible.builtin.shell: forge --version
+          args:
+            executable: /bin/bash
+          environment:
+            PATH: "{{ ansible_env.PATH }}:/root/.foundry/bin"   
+          register: forge_version
+          failed_when: forge_version.rc != 0
       when: node_action == "install"
 
     - name: Clone Berachain Polaris repository
