@@ -112,10 +112,9 @@
         - name: Reload systemd manager configuration
           ansible.builtin.systemd:
             daemon_reload: true
-        - name: Enable and start Berachain node service
+        - name: Enable Berachain node service
           ansible.builtin.systemd:
             name: berachain-node
-            state: started
             enabled: true
       when: node_action == "install"
 
