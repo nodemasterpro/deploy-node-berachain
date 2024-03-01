@@ -143,22 +143,3 @@
       delay: 5
       ignore_errors: true
 
-    - name: Extract important information and save to a file
-      ansible.builtin.shell: >
-        awk '
-        BEGIN {capture = 0; info = ""}
-        /\*\*Important\*\*/ {capture = 1; info = ""}
-        /- address:|name:|pubkey:|type:/ {
-          if (capture) {
-            print info;
-            info = ""; # Réinitialise info pour la prochaine capture
-          }
-          capture = 0; # Réinitialise capture après avoir trouvé l'information clé
-        }
-        capture {info = info "\n" $0}
-        END {
-            if (info != "") print info; # Assure l'impression de la dernière capture s'il y en a
-        }' {{ ansible_env.HOME }}/berachain/output.log > {{ ansible_env.HOME }}/berachain/passphrase.txt
-      args:
-        executable: /bin/bash
-
