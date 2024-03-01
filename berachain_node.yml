@@ -115,6 +115,7 @@
         - name: Enable and start Berachain node service
           ansible.builtin.systemd:
             name: berachain-node
+            state: started
             enabled: true
       when: node_action == "install"
 
@@ -123,7 +124,7 @@
         - name: Stop and disable Berachain node service
           ansible.builtin.systemd:
             name: berachain-node
-            state: started
+            state: stopped
             enabled: false
         - name: Remove Berachain files and configurations
           ansible.builtin.file:
