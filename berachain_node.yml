@@ -78,6 +78,8 @@
           ansible.builtin.shell: forge --version
           args:
             executable: /bin/bash
+          environment:
+            PATH: "{{ ansible_env.PATH }}:/root/.foundry/bin"   
           register: forge_version
           failed_when: forge_version.rc != 0
         - name: Update Foundry to the latest version
