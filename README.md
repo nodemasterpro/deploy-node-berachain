@@ -27,7 +27,7 @@ cd deploy-node-berachain
 ### Step 3: Executing the Playbook
 Run the playbook using the following command:
 ```
-ansible-playbook berachain_node.yml -e action_node="install"
+ansible-playbook bera_node.yml -e node_action="install"
 ```
 Ensure you're running the playbook with root privileges or via a user with sudo access. The bearchain node is started after installation.
 
@@ -57,6 +57,6 @@ sudo systemctl start berachain-node
 Remove berachain node: 
 To remove the berachain node, run the playbook using the following command:
 ```
-ansible-playbook berachain_node.yml -e action_node="remove"
+ansible-playbook berachain_node.yml -e node_action="remove"
 ```
 
