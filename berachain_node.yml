@@ -137,11 +137,3 @@
             daemon_reload: true
       when: node_action == "remove"
 
-    - name: Wait for 'Genesis transaction' to appear in the log file
-      ansible.builtin.shell: grep -q 'Genesis transaction' /root/berachain/output.log
-      register: grep_result
-      until: grep_result.rc == 0
-      retries: 30
-      delay: 5
-      ignore_errors: true
-
