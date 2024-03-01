@@ -1,0 +1,15 @@
+[Unit]
+Description=Berachain Node Service
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory={{ working_directory }}
+# Added environment variables for Go and Foundry
+Environment="PATH=/usr/local/go/bin:/root/.foundry/bin:/usr/bin:/bin:$PATH"
+ExecStart=/bin/bash -c 'while true; do echo n | /usr/bin/make start 2>&1| /usr/bin/tee {{ logs_directory }}/output.log; done'
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

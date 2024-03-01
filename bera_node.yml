@@ -1,0 +1,164 @@
+---
+- name: Manage a Berachain testnet node
+  hosts: localhost
+  become: true
+  vars_prompt:
+    - name: node_action
+      prompt: "Enter the action to perform (install, remove)"
+      private: false
+  vars:
+    working_directory: "{{ ansible_env.HOME }}/polaris"
+    logs_directory: "{{ ansible_env.HOME }}/berachain"   
+
+  tasks:
+    - name: Install dependencies
+      ansible.builtin.apt:
+        name:
+          - git
+          - make
+          - jq
+        state: present
+      when: node_action == "install"
+
+    - name: Create berachain log output directory and ensure the output.log file exists
+      block:
+        - name: Create berachain log output
+          ansible.builtin.file:
+            path: "{{ logs_directory }}"
+            state: directory
+            mode: '0755'
+        - name: Ensure the output.log file exists
+          ansible.builtin.file:
+            path: "{{ logs_directory }}/output.log"
+            state: touch
+            mode: '0644'
+      when: node_action == "install"
+
+    - name: Remove existing .tmp/polard folder if it exists
+      ansible.builtin.file:
+        path: "{{ working_directory }}/.tmp/polard"
+        state: absent
+      when: node_action == "remove"
+    
+    - name: Download, install, and verify GoLang
+      block:
+        - name: Download GoLang
+          ansible.builtin.get_url:
+            url: https://golang.org/dl/go1.21.4.linux-amd64.tar.gz
+            dest: "/tmp/go1.21.4.linux-amd64.tar.gz"
+        - name: Extract GoLang
+          ansible.builtin.unarchive:
+            src: "/tmp/go1.21.4.linux-amd64.tar.gz"
+            dest: /usr/local
+            remote_src: yes
+        - name: Set GoLang PATH environment variable globally
+          ansible.builtin.lineinfile:
+            path: /etc/profile
+            line: 'export PATH=$PATH:/usr/local/go/bin'
+            create: yes
+        - name: Verify Go installation
+          ansible.builtin.command: /usr/local/go/bin/go version
+          register: go_version
+          failed_when: go_version.rc != 0
+      when: node_action == "install"
+
+    - name: Install Foundry, update PATH, and verify installation
+      block:
+        - name: Install Foundry
+          ansible.builtin.shell: curl -L https://foundry.paradigm.xyz | bash
+          args:
+            executable: /bin/bash
+          environment:
+            PATH: "{{ ansible_env.PATH }}:/root/.foundry/bin"
+        - name: Reload .bashrc to ensure PATH is updated
+          ansible.builtin.shell: source /root/.bashrc
+          args:
+            executable: /bin/bash
+        - name: Verify forge installation
+          ansible.builtin.shell: forge --version
+          args:
+            executable: /bin/bash
+          register: forge_version
+          failed_when: forge_version.rc != 0
+        - name: Update Foundry to the latest version
+          ansible.builtin.shell: foundryup
+          args:
+            executable: /bin/bash
+          environment:
+            PATH: "{{ ansible_env.PATH }}:/root/.foundry/bin"
+        - name: Create symlink for forge in /usr/local/bin
+          ansible.builtin.file:
+            src: /root/.foundry/bin/forge
+            dest: /usr/local/bin/forge
+            state: link
+      when: node_action == "install"
+
+    - name: Clone Berachain Polaris repository
+      ansible.builtin.git:
+        repo: 'https://github.com/berachain/polaris'
+        dest: "{{ working_directory }}"
+        version: main
+        depth: 1
+      when: node_action == "install"
+
+    - name: Manage Berachain node service
+      block:
+        - name: Create Berachain node service from template
+          ansible.builtin.template:
+            src: berachain-node.service.j2
+            dest: /etc/systemd/system/berachain-node.service
+        - name: Reload systemd manager configuration
+          ansible.builtin.systemd:
+            daemon_reload: true
+        - name: Enable and start Berachain node service
+          ansible.builtin.systemd:
+            name: berachain-node
+            enabled: true
+      when: node_action == "install"
+
+    - name: Remove Berachain node
+      block:
+        - name: Stop and disable Berachain node service
+          ansible.builtin.systemd:
+            name: berachain-node
+            state: started
+            enabled: false
+        - name: Remove Berachain files and configurations
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ working_directory }}"
+            - "/etc/systemd/system/berachain-node.service"
+        - name: Reload systemd manager configuration
+          ansible.builtin.systemd:
+            daemon_reload: true
+      when: node_action == "remove"
+
+    - name: Wait for 'Genesis transaction' to appear in the log file
+      ansible.builtin.shell: grep -q 'Genesis transaction' /root/berachain/output.log
+      register: grep_result
+      until: grep_result.rc == 0
+      retries: 30
+      delay: 5
+      ignore_errors: true
+
+    - name: Extract important information and save to a file
+      ansible.builtin.shell: >
+        awk '
+        BEGIN {capture = 0; info = ""}
+        /\*\*Important\*\*/ {capture = 1; info = ""}
+        /- address:|name:|pubkey:|type:/ {
+          if (capture) {
+            print info;
+            info = ""; # Réinitialise info pour la prochaine capture
+          }
+          capture = 0; # Réinitialise capture après avoir trouvé l'information clé
+        }
+        capture {info = info "\n" $0}
+        END {
+            if (info != "") print info; # Assure l'impression de la dernière capture s'il y en a
+        }' {{ ansible_env.HOME }}/berachain/output.log > {{ ansible_env.HOME }}/berachain/passphrase.txt
+      args:
+        executable: /bin/bash
+

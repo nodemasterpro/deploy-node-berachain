@@ -1,67 +1,62 @@
-# Deploy Node Aleo
-
-This repository contains Ansible scripts for installing, updating, and removing an Aleo node on Linux systems. The playbook simplifies the process of setting up an Aleo node, managing its services, and viewing logs for debugging and monitoring.
+# Deploy Node Berachain
+This repository contains Ansible scripts for installing, updating, and removing a Berachain node on Linux systems. The playbook simplifies the process of setting up a Berachain node, managing its services, and ensuring that key transactions are recognized before proceeding with node operations.
 
 ## Prerequisites
-A Linux system Ubuntu 22.04 TLS with root.
+A Linux system (Ubuntu 22.04 LTS recommended) with root access.
 Git and Ansible installed on your machine.
-Getting Started
 
-## Step 1: Installing Dependencies
+## Getting Started
+### Step 1: Installing Dependencies
 Update your system's package list:
+
 ```
 sudo apt update && sudo apt upgrade -y
 ```
-
 Install Ansible and Git:
 ```
 sudo apt install ansible git -y
 ```
 
-## Step 2: Downloading the Project
+### Step 2: Downloading the Project
 Clone this repository to get the Ansible playbook and all necessary files:
 ```
-git clone https://github.com/nodemasterpro/deploy-node-aleo.git
-cd deploy-node-aleo
+git clone https://github.com/nodemasterpro/deploy-node-berachain.git
+cd deploy-node-berachain
 ```
 
-## Step 3: Executing the Playbook
-Run the playbook using the following command. You'll be prompted to specify the action (install, update, or remove):
+### Step 3: Executing the Playbook
+Run the playbook using the following command:
 ```
-ansible-playbook aleo_node.yml
+ansible-playbook berachain_node.yml -e action_node="install"
 ```
-Ensure you're running the playbook with root privileges or via a user with sudo access.
+Ensure you're running the playbook with root privileges or via a user with sudo access. The bearchain node is started after installation.
 
-##  Step 4: Managing the Aleo Node
-Starting Services:
-To start the Aleo client or prover service:
 
+### Step 4: Viewing Logs
+To view the logs for the Berachain node:
 ```
-sudo systemctl start aleo-client
+journalctl -u berachain-node -f -o cat
 ```
-then
-```
-sudo systemctl start aleo-prover
-```
-Stopping Services:
-To stop the services:
-```
-sudo systemctl stop aleo-client
-```
-then
-```
-sudo systemctl stop aleo-prover
-```
-## Step 5: Viewing Logs
-To view the logs for the Aleo client or prover:
 
-Logs aleo client: 
-```
-journalctl -u aleo-client -f -o cat
-```
-Logs aleo prover: 
-```
-journalctl -u aleo-prover -f -o cat
-```
 ## Additional Note
-After installation or update, the Aleo account keys are stored in /root/aleo/account_new.txt. Please ensure to check this location for your keys. 
+
+After installation , the Berachain node's adress and your mnemonic phrase are stored in the specified log file located at /root/berachain/output.log. Please ensure to check this location for your  mnemonic phrase and node adress.
+
+Stopping Services:
+To stop the service:
+```
+sudo systemctl stop berachain-node
+```
+
+Starting Services:
+To start the Berachain node service:
+```
+sudo systemctl start berachain-node
+```
+
+Remove berachain node: 
+To remove the berachain node, run the playbook using the following command:
+```
+ansible-playbook berachain_node.yml -e action_node="remove"
+```
+
